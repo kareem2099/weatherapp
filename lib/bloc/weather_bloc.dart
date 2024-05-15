@@ -44,8 +44,13 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
         emit(WeatherAndForecastLoaded(weatherData, threeHourForecastDataList,
             fiveDayForecastDataList, airPollutionData));
       } catch (e) {
-        emit(WeatherError('Failed to fetch weather or forecast data'));
-        emit(AirPollutionError('Failed to fetch air pollution data'));
+        if (e is WeatherApiException) {
+          emit(WeatherError(e.message, errorType: e.errorType));
+
+          emit(AirPollutionError('Failed to fetch air pollution data'));
+        } else {
+          emit(WeatherError('An unexpected error occurred'));
+        }
       }
     });
 
@@ -99,6 +104,28 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
         emit(WeatherError(
             'Location permission permanently denied, please enable it in app settings'));
         // You can use a platform-specific method to open app settings here
+      }
+    });
+
+    on<FetchForecast>((event, emit) async {
+      emit(WeatherLoading());
+      try {
+        // Fetch 5-day forecast data
+        final fiveDayForecastResponse = await weatherApiClient.get5DayForecast(
+            event.latitude, event.longitude);
+        final List<ForecastData> fiveDayForecastDataList =
+            (fiveDayForecastResponse['list'] as List)
+                .map((item) => ForecastData.fromJson(item))
+                .toList();
+
+        // Emit state with 5-day forecast data
+        emit(ForecastLoaded(fiveDayForecastDataList));
+      } catch (e) {
+        if (e is WeatherApiException) {
+          emit(WeatherError(e.message, errorType: e.errorType));
+        } else {
+          emit(WeatherError('Failed to fetch forecast data'));
+        }
       }
     });
   }

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:weatherapp/models/air_pollution_data.dart';
 import 'package:weatherapp/models/forecast_data.dart';
 
@@ -21,8 +22,9 @@ class ForecastLoaded extends WeatherState {
 
 class WeatherError extends WeatherState {
   final String message;
+  final DioExceptionType? errorType; // Optional: include the type of error
 
-  WeatherError(this.message);
+  WeatherError(this.message, {this.errorType});
 }
 
 class AirPollutionError extends WeatherState {

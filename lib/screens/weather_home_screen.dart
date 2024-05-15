@@ -63,8 +63,15 @@ class _WeatherHomePageState extends State<WeatherHomePage> {
               airQualityData: state.airQualityData,
             );
           } else if (state is WeatherError) {
-            return Center(child: Text(state.message));
+            // Display the error message from the API client
+            String errorMessage = 'Error: ${state.message}';
+            if (state.errorType != null) {
+              errorMessage +=
+                  ' (Type: ${state.errorType})'; // Append error type if available
+            }
+            return Center(child: Text(errorMessage));
           }
+
           return Container(); // Placeholder for other states
         },
       ),

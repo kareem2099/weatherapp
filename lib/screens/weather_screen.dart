@@ -7,6 +7,7 @@ import 'package:weatherapp/models/air_pollution_data.dart';
 import 'package:weatherapp/models/forecast_data.dart';
 import 'package:weatherapp/models/weather_data.dart';
 import 'package:intl/intl.dart';
+
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 
 class CombinedWeatherForecastScreen extends StatefulWidget {
@@ -29,7 +30,40 @@ class CombinedWeatherForecastScreen extends StatefulWidget {
 }
 
 class _CombinedWeatherForecastScreenState
-    extends State<CombinedWeatherForecastScreen> {
+    extends State<CombinedWeatherForecastScreen>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
+  bool _isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController!);
+  }
+
+  @override
+  void dispose() {
+    _animationController?.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpansion(bool isExpanded) {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController?.forward();
+      } else {
+        _animationController?.reverse();
+      }
+    });
+  }
+
   Color getAqiColor(int aqi) {
     if (aqi <= 50) {
       return Colors.green; // Good
@@ -106,6 +140,26 @@ class _CombinedWeatherForecastScreenState
     }
   }
 
+  void showErrorDialog(BuildContext context, String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(errorMessage),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Assuming WeatherData and ForecastData have the necessary fields
@@ -149,8 +203,13 @@ class _CombinedWeatherForecastScreenState
               Widget body;
               if (mode == RefreshStatus.refreshing ||
                   mode == RefreshStatus.idle) {
-                body = Image.asset(
-                    'assets/gif/1.webp'); // Replace with your GIF asset path
+                body = Center(
+                  child: Image.asset(
+                    'assets/gif/1.webp',
+                    width: 100, // Set your desired width
+                    height: 100, // Set your desired height
+                  ),
+                );
               } else {
                 body = Container();
               }
@@ -307,34 +366,53 @@ class _CombinedWeatherForecastScreenState
                 ExpansionTile(
                   leading: const Icon(Icons.info_outline, color: Colors.black),
                   title: Container(
-                    padding: const EdgeInsets.all(16.0),
-                    color: getAqiColor(widget.airQualityData.aqi),
+                    padding: const EdgeInsets.all(20.0),
+                    color: getAqiColor(widget.airQualityData
+                        .aqi), // This will be a soothing color based on the AQI
                     child: Text(
                       getAqiDescription(widget.airQualityData.aqi),
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: 12, // Smaller font size
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                   ),
-                  children:
-                      widget.airQualityData.components.entries.map((entry) {
-                    final component = entry.key;
-                    final value = entry.value;
-                    final color = getColorForComponent(value);
+                  onExpansionChanged: _toggleExpansion,
+                  children: [
+                    FadeTransition(
+                      opacity: _fadeAnimation!,
+                      child: Column(
+                        children: widget.airQualityData.components.entries
+                            .map((entry) {
+                          final component = entry.key;
+                          final value = entry.value;
+                          final color = getColorForComponent(
+                              value); // This will be a soothing color based on the component value
 
-                    return ListTile(
-                      title: Text('$component: $value'),
-                      tileColor: color,
-                    );
-                  }).toList(),
+                          return ListTile(
+                            title: Text(
+                              '$component: $value',
+                              style: TextStyle(
+                                fontSize:
+                                    10, // Even smaller font size for the list tile
+                                color: Colors
+                                    .black, // Ensuring readability against the tile color
+                              ),
+                            ),
+                            tileColor: color,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
                 GridView.count(
                   physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   crossAxisCount: 2,
-                  childAspectRatio: 3,
+                  childAspectRatio: MediaQuery.of(context).size.width /
+                      (MediaQuery.of(context).size.height / 1.5),
                   children: [
                     _buildWeatherCard(
                         'Feels Like',
@@ -385,16 +463,25 @@ class _CombinedWeatherForecastScreenState
 
 Widget _buildWeatherCard(String title, String value, String unicodeIcon) {
   return Card(
+    color: Colors.orangeAccent, // A warm, comfortable color for the background
     child: Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(10.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text(unicodeIcon, style: const TextStyle(fontSize: 24)),
+          Text(unicodeIcon,
+              style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.brown)), // Dark color for the icon
           Text(title,
-              style:
-                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          Text(value, style: const TextStyle(fontSize: 12)),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black)), // Dark color for the title
+          Text(value,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black)), // Dark color for the value
         ],
       ),
     ),

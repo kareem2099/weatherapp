@@ -87,7 +87,9 @@ class WeatherApiClient {
 
   Map<String, dynamic> _handleDioError(dynamic e) {
     String errorMessage;
+    DioExceptionType errorType;
     if (e is DioException) {
+      errorType = e.type;
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
           errorMessage = 'Connection timeout';
@@ -116,11 +118,18 @@ class WeatherApiClient {
       }
     } else {
       errorMessage = 'An unexpected error occurred: $e';
+      errorType = DioExceptionType.unknown;
     }
-    throw Exception(errorMessage);
+    throw WeatherApiException(errorMessage, errorType);
   }
 
   void dispose() {
     dio.close(); // Cancel ongoing Dio requests
   }
+}
+
+class WeatherApiException implements Exception {
+  final String message;
+  final DioExceptionType errorType;
+  WeatherApiException(this.message, this.errorType);
 }
