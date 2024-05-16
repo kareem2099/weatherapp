@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.9.23'
+    ext.kotlin_version = '1.9.24'
     repositories {
         google()
         mavenCentral()
@@ -12,6 +12,9 @@ buildscript {
 }
 
 allprojects {
+    tasks.withType(JavaCompile){
+            options.compilerArgs <<"-Xlint:deprecation"
+        }
     repositories {
         google()
         mavenCentral()

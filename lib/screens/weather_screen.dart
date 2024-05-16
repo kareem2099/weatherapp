@@ -7,7 +7,6 @@ import 'package:weatherapp/models/air_pollution_data.dart';
 import 'package:weatherapp/models/forecast_data.dart';
 import 'package:weatherapp/models/weather_data.dart';
 import 'package:intl/intl.dart';
-
 import 'package:pull_to_refresh_flutter3/pull_to_refresh_flutter3.dart';
 
 class CombinedWeatherForecastScreen extends StatefulWidget {
